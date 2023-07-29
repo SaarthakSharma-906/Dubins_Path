@@ -1,0 +1,178 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+'''After plotting start and end arrows,If the distance >=4*Rmin, CSC is the optimal path to follow, we draw tangent circles with radius Rmin . Among these we consider those that have center to center distance minimum(min
+center circles) and then we generate tangent points on these .'''
+
+
+
+def get_tangent_points(radius, center1, center2):
+    # Calculate distance between centers
+    distance = np.linalg.norm(center2 - center1)
+
+    # Check if circles are overlapping
+    if distance < 2 * radius:
+        print("Circles are overlapping. No tangent points.")
+        return None
+    else:
+        # Calculate angles
+        angle_centers = np.arctan2(center2[1] - center1[1], center2[0] - center1[0])
+        angle_tangent = np.arcsin(2 * radius / distance)
+
+        # Calculate tangent points for Circle 1
+        tangent_points_c1 = []
+        for i in [-1, 1]:
+            for j in [-1, 1]:
+                tangent_point_c1 = center1 + radius * np.array([np.cos(angle_centers + i * np.pi/2 + j * angle_tangent),
+                                                                np.sin(angle_centers + i * np.pi/2 + j * angle_tangent)])
+                tangent_points_c1.append(tangent_point_c1)
+
+        # Calculate tangent points for Circle 2
+        tangent_points_c2 = []
+        for i in [-1, 1]:
+            for j in [-1, 1]:
+                tangent_point_c2 = center2 + radius * np.array([np.cos(angle_centers + np.pi + i * np.pi/2 + j * angle_tangent),
+                                                                np.sin(angle_centers + np.pi + i * np.pi/2 + j * angle_tangent)])
+                tangent_points_c2.append(tangent_point_c2)
+
+        return tangent_points_c1, tangent_points_c2
+
+def draw_and_find_min_centers_circles(start_arrow, end_arrow, radius):
+    # Extract the center points and headings of the arrows
+    center_start = start_arrow[:2]
+    center_end = end_arrow[:2]
+    heading_start = start_arrow[2]
+    heading_end = end_arrow[2]
+
+    # Calculate the direction vectors
+    direction_start = np.array([np.cos(heading_start), np.sin(heading_start)])
+    direction_end = np.array([np.cos(heading_end), np.sin(heading_end)])
+
+    # Calculate the normal vectors
+    normal_start = np.array([-direction_start[1], direction_start[0]])
+    normal_end = np.array([-direction_end[1], direction_end[0]])
+
+    # Calculate the circle centers
+    center_start_right = center_start + radius * normal_start
+    center_start_left = center_start - radius * normal_start
+    center_end_right = center_end + radius * normal_end
+    center_end_left = center_end - radius * normal_end
+
+    # Check if the distance is greater than 4 times the minimum radius
+    distance = np.linalg.norm(center_end - center_start)  # Distance between start and end centers
+    if distance > 4 * radius:
+        # Calculate the distances between the centers
+        dist_R_L = np.linalg.norm(center_start_right - center_end_left)
+        dist_R_R = np.linalg.norm(center_start_right - center_end_right)
+        dist_L_R = np.linalg.norm(center_start_left - center_end_right)
+        dist_L_L = np.linalg.norm(center_start_left - center_end_left)
+
+        # Find the minimum distance and corresponding circle centers
+        min_dist = min(dist_L_L, dist_L_R, dist_R_L, dist_R_R)
+        if min_dist == dist_R_L:
+            min_centers = [center_start_right, center_end_left]
+        elif min_dist == dist_L_R:
+            min_centers = [center_start_left, center_end_right]
+        elif min_dist == dist_R_R:
+            min_centers = [center_start_right, center_end_right]
+        else:
+            min_centers = [center_start_left, center_end_left]
+
+        # Create a figure and axis
+        fig, ax = plt.subplots()
+
+        # Plot the start and end arrows
+        ax.arrow(*center_start, radius * direction_start[0], radius * direction_start[1], head_width=0.5, head_length=1, fc='b', ec='b', label='Start')
+        ax.arrow(*center_end, radius * direction_end[0], radius * direction_end[1], head_width=0.5, head_length=1, fc='r', ec='r', label='End')
+
+        # Plot the tangent circles
+        circle_start_right = plt.Circle(center_start_right, radius, fill=False, color='g')
+        circle_start_left = plt.Circle(center_start_left, radius, fill=False, color='g')
+        circle_end_right = plt.Circle(center_end_right, radius, fill=False, color='g')
+        circle_end_left = plt.Circle(center_end_left, radius, fill=False, color='g')
+        ax.add_patch(circle_start_right)
+        ax.add_patch(circle_start_left)
+        ax.add_patch(circle_end_right)
+        ax.add_patch(circle_end_left)
+
+        # Plot the circles with minimum distance centers
+        circle_min1 = plt.Circle(min_centers[0], radius, fill=False, color='m', linewidth=2)
+        circle_min2 = plt.Circle(min_centers[1], radius, fill=False, color='m', linewidth=2)
+        ax.add_patch(circle_min1)
+        ax.add_patch(circle_min2)
+
+        # Set the aspect ratio to equal
+        ax.set_aspect('equal')
+
+        # Set the plot limits
+        min_x = min(center_start[0], center_end[0]) - 2 * radius
+        max_x = max(center_start[0], center_end[0]) + 2 * radius
+        min_y = min(center_start[1], center_end[1]) - 2 * radius
+        max_y = max(center_start[1], center_end[1]) + 2 * radius
+        ax.set_xlim(min_x, max_x)
+        ax.set_ylim(min_y, max_y)
+
+        # Set the labels and title
+        ax.set_xlabel('X')
+        ax.set_ylabel('Y')
+        ax.set_title('Tangent Circles with Arrows')
+
+        # Add a legend
+        ax.legend()
+
+        # Show the plot
+        plt.show()
+
+        return min_centers
+
+    else:
+        print("Distance between start and end points is not greater than 4 * Rmin.")
+
+# Example
+start_arrow = np.array([0, 0, np.radians(45)])
+end_arrow = np.array([24, 33, np.radians(-30)])
+Rmin = 4
+
+min_centers = draw_and_find_min_centers_circles(start_arrow, end_arrow, Rmin)
+print(min_centers)
+
+# Find and plot tangent points
+tangent_points_c1, tangent_points_c2 = get_tangent_points(Rmin, min_centers[0], min_centers[1])
+
+# Create a figure and axis
+fig, ax = plt.subplots()
+
+# Plot the start and end arrows
+ax.arrow(*start_arrow[:2], Rmin * np.cos(start_arrow[2]), Rmin * np.sin(start_arrow[2]), head_width=0.5, head_length=1, fc='b', ec='b', label='Start')
+ax.arrow(*end_arrow[:2], Rmin * np.cos(end_arrow[2]), Rmin * np.sin(end_arrow[2]), head_width=0.5, head_length=1, fc='r', ec='r', label='End')
+
+# Plot the tangent circles
+circle_min1 = plt.Circle(min_centers[0], Rmin, fill=False, color='m', linewidth=2)
+circle_min2 = plt.Circle(min_centers[1], Rmin, fill=False, color='m', linewidth=2)
+ax.add_patch(circle_min1)
+ax.add_patch(circle_min2)
+
+# Plot the tangent points on Circle 1 and Circle 2
+for point in tangent_points_c1:
+    ax.plot(point[0], point[1], 'ro')
+for point in tangent_points_c2:
+    ax.plot(point[0], point[1], 'ro')
+
+# Set the aspect ratio to equal
+ax.set_aspect('equal')
+
+# Set the plot limits
+min_x = min(start_arrow[0], end_arrow[0], min_centers[0][0], min_centers[1][0]) - 2 * Rmin
+max_x = max(start_arrow[0], end_arrow[0], min_centers[0][0], min_centers[1][0]) + 2 * Rmin
+min_y = min(start_arrow[1], end_arrow[1], min_centers[0][1], min_centers[1][1]) - 2 * Rmin
+max_y = max(start_arrow[1], end_arrow[1], min_centers[0][1], min_centers[1][1]) + 2 * Rmin
+ax.set_xlim(min_x, max_x)
+ax.set_ylim(min_y, max_y)
+
+# Set the labels and title
+ax.set_xlabel('X')
+ax.set_ylabel('Y')
+ax.set_title('Tangent Points with Minimum Centers')
+
+# Show the plot
+plt.show()

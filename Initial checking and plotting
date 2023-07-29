@@ -1,0 +1,42 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+def plot_arrows(start_arrow, end_arrow):
+    # Create a figure and axis
+    fig, ax = plt.subplots()
+
+    # Plot the arrows
+    ax.arrow(*start_arrow[:2], np.cos(start_arrow[2]), np.sin(start_arrow[2]), head_width=0.5, head_length=1, fc='b', ec='b', label='Arrow 1')
+    ax.arrow(*end_arrow[:2], np.cos(end_arrow[2]), np.sin(end_arrow[2]), head_width=0.5, head_length=1, fc='r', ec='r', label='Arrow 2')
+
+    # Set axis limits
+    ax.set_xlim(min(start_arrow[0], end_arrow[0]) - 1, max(start_arrow[0], end_arrow[0]) + 2)
+    ax.set_ylim(min(start_arrow[1], end_arrow[1]) - 1, max(start_arrow[1], end_arrow[1]) + 2)
+
+    # Set axis labels and title
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_title('Arrows Plot')
+
+    # Add a legend
+    ax.legend()
+
+    # Calculate the distance between the arrows
+    distance = np.linalg.norm(end_arrow[:2] - start_arrow[:2])
+
+    # Print the distance
+    print("Distance between Arrow 1 and Arrow 2:", distance)
+
+    # Show the plot
+    plt.show()
+
+
+# Example usage:
+start_arrow = np.array([0, 0, np.radians(45)])  # [x, y, heading angle in radians]
+end_arrow = np.array([3, 12, np.radians(-30)])  # [x, y, heading angle in radians]
+Rmin = 4
+
+# Plot the arrows
+plot_arrows(start_arrow, end_arrow)
+
+

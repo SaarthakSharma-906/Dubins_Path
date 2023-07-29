@@ -1,0 +1,185 @@
+'''After generating tangent points on min_center circles , we compare the all possible distances from start arrow to end arrow store the shortest among them and compute path type '''
+
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Function to calculate the distance between two points
+def distance_between_points(point1, point2):
+    return np.linalg.norm(point2 - point1)
+
+# Function to calculate the angular distance between two angles (in radians)
+def angular_distance(angle1, angle2):
+    diff = angle2 - angle1
+    return (diff + np.pi) % (2 * np.pi) - np.pi
+
+def get_tangent_points(radius, center):
+    tangent_points = []
+
+    # Calculate the tangent points for the circle with radius Rmin at the given center
+    for i in [-1, 1]:
+        for j in [1, -1]:
+            tangent_point = center + radius * np.array([i, j])
+            tangent_points.append(tangent_point)
+
+    return tangent_points
+
+def draw_and_find_min_centers_circles(start_arrow, end_arrow, radius):
+    center_start = start_arrow[:2]
+    center_end = end_arrow[:2]
+    heading_start = start_arrow[2]
+    heading_end = end_arrow[2]
+
+    # Calculate the direction vectors
+    direction_start = np.array([np.cos(heading_start), np.sin(heading_start)])
+    direction_end = np.array([np.cos(heading_end), np.sin(heading_end)])
+
+    # Calculate the normal vectors
+    normal_start = np.array([-direction_start[1], direction_start[0]])
+    normal_end = np.array([-direction_end[1], direction_end[0]])
+
+    # Calculate the circle centers
+    center_start_right = center_start + radius * normal_start
+    center_start_left = center_start - radius * normal_start
+    center_end_right = center_end + radius * normal_end
+    center_end_left = center_end - radius * normal_end
+
+    # Check if the distance is greater than 4 times the minimum radius
+    distance = np.linalg.norm(center_end - center_start)  # Distance between start and end centers
+    if distance > 4 * radius:
+        # Calculate the tangent points for the min_center circles
+        tangent_points_c1 = get_tangent_points(radius, center_start)
+        tangent_points_c2 = get_tangent_points(radius, center_end)
+        dist_R_L = np.linalg.norm(center_start_right - center_end_left)
+        dist_R_R = np.linalg.norm(center_start_right - center_end_right)
+        dist_L_R = np.linalg.norm(center_start_left - center_end_right)
+        dist_L_L = np.linalg.norm(center_start_left - center_end_left)
+
+        # Find the minimum distance and corresponding circle centers
+        min_dist = min(dist_L_L, dist_L_R, dist_R_L, dist_R_R)
+        if min_dist == dist_R_L:
+            min_centers = [center_start_right, center_end_left]
+        elif min_dist == dist_L_R:
+            min_centers = [center_start_left, center_end_right]
+        elif min_dist == dist_R_R:
+            min_centers = [center_start_right, center_end_right]
+        else:
+            min_centers = [center_start_left, center_end_left]
+
+        # Create a figure and axis
+        fig, ax = plt.subplots()
+
+        # Plot the start and end arrows
+        ax.arrow(*center_start, radius * direction_start[0], radius * direction_start[1], head_width=0.5, head_length=1, fc='b', ec='b', label='Start')
+        ax.arrow(*center_end, radius * direction_end[0], radius * direction_end[1], head_width=0.5, head_length=1, fc='r', ec='r', label='End')
+
+        # Plot the tangent circles
+        circle_start_right = plt.Circle(center_start_right, radius, fill=False, color='g')
+        circle_start_left = plt.Circle(center_start_left, radius, fill=False, color='g')
+        circle_end_right = plt.Circle(center_end_right, radius, fill=False, color='g')
+        circle_end_left = plt.Circle(center_end_left, radius, fill=False, color='g')
+        ax.add_patch(circle_start_right)
+        ax.add_patch(circle_start_left)
+        ax.add_patch(circle_end_right)
+        ax.add_patch(circle_end_left)
+
+        # Plot the circles with minimum distance centers
+        circle_min1 = plt.Circle(min_centers[0], radius, fill=False, color='m', linewidth=2)
+        circle_min2 = plt.Circle(min_centers[1], radius, fill=False, color='m', linewidth=2)
+        ax.add_patch(circle_min1)
+        ax.add_patch(circle_min2)
+
+        # Set the aspect ratio to equal
+        ax.set_aspect('equal')
+
+        # Set the plot limits
+        min_x = min(center_start[0], center_end[0]) - 2 * radius
+        max_x = max(center_start[0], center_end[0]) + 2 * radius
+        min_y = min(center_start[1], center_end[1]) - 2 * radius
+        max_y = max(center_start[1], center_end[1]) + 2 * radius
+        ax.set_xlim(min_x, max_x)
+        ax.set_ylim(min_y, max_y)
+
+        # Set the labels and title
+        ax.set_xlabel('X')
+        ax.set_ylabel('Y')
+        ax.set_title('Tangent Circles with Arrows')
+
+        # Add a legend
+        ax.legend()
+
+        # Show the plot
+        plt.show()
+
+        return min_centers
+
+    else:
+        print("Distance between the arrows is greater than 4*Rmin")
+
+
+def find_shortest_path_distance(start_arrow, end_arrow, Rmin):
+
+    # Step 1: Find the tangent points on min_center circles
+    min_centers = draw_and_find_min_centers_circles(start_arrow, end_arrow, Rmin)
+    tangent_points_c1 = get_tangent_points(Rmin, min_centers[0])
+    tangent_points_c2 = get_tangent_points(Rmin, min_centers[1])
+
+    # Step 2: Calculate angles of tangent points on min_center_circle1 relative to the start_arrow direction
+    start_heading = start_arrow[2]
+    angles_c1 = [angular_distance(start_heading, np.arctan2(point[1] - start_arrow[1], point[0] - start_arrow[0])) for point in tangent_points_c1]
+
+    # Step 3: Calculate angles of tangent points on min_center_circle2 relative to the end_arrow direction
+    end_heading = end_arrow[2]
+    angles_c2 = [angular_distance(end_heading, np.arctan2(point[1] - end_arrow[1], point[0] - end_arrow[0])) for point in tangent_points_c2]
+
+
+    # Step 4: Select tangent points that minimize the sum of angular distances
+    index_c1 = np.argmin(angles_c1)
+    index_c2 = np.argmin(angles_c2)
+    tangent_point_c1 = tangent_points_c1[index_c1]
+    tangent_point_c2 = tangent_points_c2[index_c2]
+
+    # Step 5: Calculate Euclidean distance between start arrow and tangent_point_c1
+    distance_start_to_c1 = distance_between_points(start_arrow[:2], tangent_point_c1)
+
+    # Step 6: Calculate Euclidean distance between end arrow and tangent_point_c2
+    distance_end_to_c2 = distance_between_points(end_arrow[:2], tangent_point_c2)
+
+    # Step 7: Calculate Euclidean distance between tangent_point_c1 and tangent_point_c2
+    distance_c1_to_c2 = distance_between_points(tangent_point_c1, tangent_point_c2)
+
+    # Step 8: Sum up the distances to get the shortest path distance
+    shortest_path_distance = distance_start_to_c1 + distance_c1_to_c2 + distance_end_to_c2
+
+    # Step 9: Determine the path type based on the angles of tangent points on min_center_circle1 and min_center_circle2
+    angle_c1 = np.degrees(angles_c1[index_c1])
+    angle_c2 = np.degrees(angles_c2[index_c2])
+
+    if angle_c1 >= 0 and angle_c2 >= 0:
+        path_type = "LSL"
+    elif angle_c1 >= 0 and angle_c2 < 0:
+        path_type = "LSR"
+    elif angle_c1 < 0 and angle_c2 >= 0:
+        path_type = "RSL"
+    else:
+        path_type = "RSR"
+
+    # Step 10: Calculate the tangent points on the shortest path
+    if path_type == "LSL" or path_type == "LSR":
+        tangent_points_shortest_path = [start_arrow[:2], tangent_point_c1, tangent_point_c2, end_arrow[:2]]
+    else:
+        tangent_points_shortest_path = [start_arrow[:2], tangent_point_c2, tangent_point_c1, end_arrow[:2]]
+
+    return shortest_path_distance, path_type, tangent_points_shortest_path
+
+
+# Example usage
+start_arrow = np.array([0, 0, np.radians(100)])
+end_arrow = np.array([19, 21, np.radians(90)])
+Rmin = 4
+
+# Find the shortest path distance and tangent points on the shortest path
+shortest_path_distance, path_type, tangent_points_shortest_path = find_shortest_path_distance(start_arrow, end_arrow, Rmin)
+print(f"Shortest path distance: {shortest_path_distance}")
+print(f"Path type: {path_type}")

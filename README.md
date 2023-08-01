@@ -31,7 +31,8 @@ Whether you are a beginner looking to grasp the fundamentals of Dubins Paths or 
 3. Shortest_CSC_path - This code gives the shortest path among LSL,RSR,LSR,RSL.
 4. CCC_trajectory - If the distance between arrows is less than 4*Rmin then CCC_trajectory is optimal, this code computes the shortest possible path among RLR and LRL. 
 
-
+## Follow this blog to learn 
+http://dubinspath.ezyro.com/
 ## Demo
 
 ![Demonstration](https://drive.google.com/drive/folders/12eNhMbuVeMaMMyHwrPnwck7WkA7E5r5l?zx=2th3iq11jctu)
